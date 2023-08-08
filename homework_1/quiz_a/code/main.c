@@ -71,7 +71,15 @@ struct st_node *st_last(struct st_node *n)
 
     return st_last(st_right(n));
 }
-
+/*
+ *        p                p
+ *        |                |
+ *        n                l
+ *       / \       -->    / \
+ *      l   x3           x1  n
+ *     / \                  / \
+ *    x1  x2               x2  x3
+ */
 static inline void st_rotate_left(struct st_node *n)
 {
     struct st_node *l = st_left(n), *p = st_parent(n);
@@ -89,6 +97,15 @@ static inline void st_rotate_left(struct st_node *n)
     if (st_left(n))
         st_lparent(n) = n;
 }
+/*
+ *        p                p
+ *        |                |
+ *        n                r
+ *       / \       -->    / \
+ *      x1  r            n   x3
+ *         / \          / \
+ *        x2  x3       x1  x2
+ */
 
 static inline void st_rotate_right(struct st_node *n)
 {
@@ -181,6 +198,20 @@ void st_insert(struct st_node **root,
     st_update(root, n);
 }
 
+/*
+ *
+ *              P                           p
+ *              |                           |
+ *              n                           r
+ *             / \                         / \
+ *            x1  \           ->          x1  \
+ *               / \                         / \
+ *              /___\                       /___\
+ *             /                           /
+ *            r(左邊最小)                  x2
+ *             \
+ *             x2
+ */
 static inline void st_replace_right(struct st_node *n, struct st_node *r)
 {
     struct st_node *p = st_parent(n), *rp = st_parent(r);
@@ -194,19 +225,24 @@ static inline void st_replace_right(struct st_node *n, struct st_node *r)
     if (st_parent(rp) == n)
         st_parent(rp) = r;
 
+    //接parent
     st_parent(r) = p;
+    //接左邊 r-> x1
     st_left(r) = st_left(n);
 
+    //接右邊
     if (st_right(n) != r) {
         st_right(r) = st_right(n);
         st_rparent(n) = r;
     }
 
+    // 接Parent
     if (p && st_left(p) == n)
         st_left(p) = r;
     else if (p)
         st_right(p) = r;
 
+    //接左邊 x1-> r
     if (st_left(n))
         st_lparent(n) = r;
 }
@@ -264,8 +300,10 @@ void st_remove(struct st_node **root, struct st_node *del)
         if (del == *root)
             *root = least;
 
-        AAAA;
-        BBBB;
+        // AAAA
+        st_replace_right(del,least);
+        // BBBB
+        st_update(root, st_right(least));
         return;
     }
 
@@ -274,8 +312,10 @@ void st_remove(struct st_node **root, struct st_node *del)
         if (del == *root)
             *root = most;
 
-        CCCC;
-        DDDD;
+        // CCCC
+        st_replace_left(del, most);
+        // DDDD
+        st_update(root, st_left(most));
         return;
     }
 
@@ -291,8 +331,8 @@ void st_remove(struct st_node **root, struct st_node *del)
         st_left(parent) = 0;
     else
         st_right(parent) = 0;
-
-    EEEE;
+    //EEEE
+    st_update(root, parent);
 }
 
 /* Test program */
@@ -303,6 +343,7 @@ void st_remove(struct st_node **root, struct st_node *del)
 #include <stdlib.h>
 #include <time.h>
 
+// 參考自linux => include/linux/kernel.h
 #define container_of(ptr, type, member) \
     ((type *) ((char *) (ptr) - (offsetof(type, member))))
 
@@ -349,7 +390,8 @@ struct treeint *treeint_insert(int a)
     struct st_node *p = NULL;
     enum st_dir d;
     for (struct st_node *n = st_root(tree); n;) {
-        struct treeint *t = container_of(n, struct treeint, st_n);
+        //有宣告過了treeint的MACRO
+        struct treeint *t = treeint_entry(n);
         if (a == t->value)
             return t;
 
@@ -408,12 +450,14 @@ static void __treeint_dump(struct st_node *n, int depth)
     if (!n)
         return;
 
-    __treeint_dump(FFFF, depth + 1);
+    //__treeint_dump(FFFF, depth + 1);
+    __treeint_dump(st_left(n), depth + 1);
 
     struct treeint *v = treeint_entry(n);
     printf("%d\n", v->value);
 
-    __treeint_dump(GGGG, depth + 1);
+    //__treeint_dump(GGGG, depth + 1);
+    __treeint_dump(st_right(n), depth + 1);
 }
 
 void treeint_dump()
