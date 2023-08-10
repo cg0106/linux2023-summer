@@ -295,19 +295,32 @@ static inline void st_replace_left(struct st_node *n, struct st_node *l)
  */
 void st_remove(struct st_node **root, struct st_node *del)
 {
-    if (st_right(del)) {
+    short rhint, lhint;
+
+    if (st_right(del) && st_left(del))
+    {
+        if (st_right(del)->hint > st_left(del)->hint)
+            goto select_right;
+        else
+            goto select_left;
+    }
+select_right:
+    if (st_right(del))
+    {
         struct st_node *least = st_first(st_right(del));
         if (del == *root)
             *root = least;
 
         // AAAA
-        st_replace_right(del,least);
+        st_replace_right(del, least);
         // BBBB
         st_update(root, st_right(least));
         return;
     }
 
-    if (st_left(del)) {
+select_left:
+    if (st_left(del))
+    {
         struct st_node *most = st_last(st_left(del));
         if (del == *root)
             *root = most;

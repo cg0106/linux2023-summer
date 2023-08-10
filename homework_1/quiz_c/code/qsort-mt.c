@@ -123,18 +123,24 @@ void qsort_mt(void *a,
     int i, islot;
     bool bailout = true;
 
+    //不夠切
     if (n < forkelem)
         goto f1;
     errno = 0;
+
     /* Try to initialize the resources we need. */
     if (pthread_mutex_init(&c.mtx_al, NULL) != 0)
         goto f1;
+
+
     if ((c.pool = calloc(maxthreads, sizeof(struct qsort))) == NULL)
         goto f2;
+
     for (islot = 0; islot < maxthreads; islot++) {
         qs = &c.pool[islot];
         if (pthread_mutex_init(&qs->mtx_st, NULL) != 0)
             goto f3;
+
         if (pthread_cond_init(&qs->cond_st, NULL) != 0) {
             verify(pthread_mutex_destroy(&qs->mtx_st));
             goto f3;
@@ -166,7 +172,7 @@ void qsort_mt(void *a,
     verify(pthread_mutex_lock(&qs->mtx_st));
     qs->a = a;
     qs->n = n;
-    qs->st = ts_work;
+    qs->st = ts_work; //第一個 status work
     c.idlethreads--;
     verify(pthread_cond_signal(&qs->cond_st));
     verify(pthread_mutex_unlock(&qs->mtx_st));
@@ -190,6 +196,8 @@ f2:
     verify(pthread_mutex_destroy(&c.mtx_al));
     if (bailout) {
         fprintf(stderr, "Resource initialization failed; bailing out.\n");
+
+//Muti Thread 參數失敗
     f1:
         qsort(a, n, es, cmp);
     }
@@ -341,6 +349,7 @@ again:
     /* Wait for work to be allocated. */
     verify(pthread_mutex_lock(&qs->mtx_st));
     while (qs->st == ts_idle)
+        // FIXME
         verify(HHHH);
     verify(pthread_mutex_unlock(&qs->mtx_st));
     if (qs->st == ts_term) {
@@ -360,6 +369,7 @@ again:
                 continue;
             verify(pthread_mutex_lock(&qs2->mtx_st));
             qs2->st = ts_term;
+            // FIXME
             verify(JJJJ);
             verify(pthread_mutex_unlock(&qs2->mtx_st));
         }
@@ -491,12 +501,14 @@ int main(int argc, char *argv[])
             int_elem[i] = rand() % nelem;
     }
     if (opt_str) {
+        //string
         if (opt_libc)
             qsort(str_elem, nelem, sizeof(char *), string_compare);
         else
             qsort_mt(str_elem, nelem, sizeof(char *), string_compare, threads,
                      forkelements);
     } else {
+        //int
         if (opt_libc)
             qsort(int_elem, nelem, sizeof(ELEM_T), num_compare);
         else
