@@ -350,7 +350,7 @@ again:
     verify(pthread_mutex_lock(&qs->mtx_st));
     while (qs->st == ts_idle)
         // FIXME
-        verify(HHHH);
+        verify(pthread_cond_wait(&qs->cond_st, &qs->mtx_st));
     verify(pthread_mutex_unlock(&qs->mtx_st));
     if (qs->st == ts_term) {
         return NULL;
@@ -370,7 +370,7 @@ again:
             verify(pthread_mutex_lock(&qs2->mtx_st));
             qs2->st = ts_term;
             // FIXME
-            verify(JJJJ);
+            verify(pthread_cond_signal(&qs2->cond_st));
             verify(pthread_mutex_unlock(&qs2->mtx_st));
         }
         verify(pthread_mutex_unlock(&c->mtx_al));
